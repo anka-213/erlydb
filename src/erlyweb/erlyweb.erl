@@ -557,7 +557,7 @@ get_app_name(A) ->
 	undefined ->
 	    exit({missing_appname,
 		  "Did you forget to add the 'appname = [name]' "
-		  "to the <opaque> directive in yaws.conf?"});
+		  "to the &lt;opaque&gt; directive in yaws.conf?"});
 	Val ->
 	    Val
     end.

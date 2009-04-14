@@ -28,7 +28,7 @@
 	 querydata/1, querydata/2, appmoddata/1, appmoddata/2, docroot/1,
 	 docroot/2, fullpath/1, fullpath/2, cont/1, cont/2, state/1,
 	 state/2, pid/1, pid/2, opaque/1, opaque/2, appmod_prepath/1,
-	 appmod_prepath/2, pathinfo/1, pathinfo/2]).
+	 appmod_prepath/2, pathinfo/1, pathinfo/2, request_path/1]).
 -include("yaws_api.hrl").
 
 %% @doc Create a new 'arg' record.
@@ -81,6 +81,9 @@ req(Arg, Val) ->
 
 method(Arg) ->
     (Arg#arg.req)#http_request.method.
+
+request_path(Arg) ->
+    (Arg#arg.req)#http_request.path.
 
 clidata(Arg) ->
     Arg#arg.clidata.

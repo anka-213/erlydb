@@ -415,12 +415,12 @@ compile_file(FileName, BaseName, Type, Options, IncludePaths, Macros) ->
 %%% {last_compile_time,auto}, we'll try some dirty tricks to see
 %%% whether we should do it.
 should_compile(_FileName,_BaseName,force)     -> true;
-should_compile(_FileName,_BaseName,undefined) -> true;
+should_compile(_FileName,_BaseName,undefined) ->
+    should_compile(_FileName,_BaseName,auto);
 should_compile(FileName, _BaseName,LastCompileTimeInSeconds) when is_integer(LastCompileTimeInSeconds) ->
     case file:read_file_info(FileName) of
         {ok,FileInfo} ->
             Mtime = calendar:datetime_to_gregorian_seconds(FileInfo#file_info.mtime),
-            
             Mtime >= LastCompileTimeInSeconds;
         {error,_} = Error ->
             Error
@@ -464,12 +464,12 @@ should_compile(FileName,BaseName,auto) ->
                         _ ->
                             %% some part of finding the last
                             %% compile-time failed
-                            should_compile(FileName,BaseName,undefined)
+                            should_compile(FileName,BaseName,force)
                     end;
                 _ ->
                     %% since the atom wasn't found, the module is not
                     %% loaded, and hence not queriable
-                    should_compile(FileName,BaseName,undefined)
+                    should_compile(FileName,BaseName,force)
             end;
         {error,_} = Error ->
             Error
