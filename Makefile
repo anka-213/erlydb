@@ -1,3 +1,6 @@
+ERL_LIB = `erl -noshell -eval 'io:format([code:lib_dir()]).' -s erlang halt`
+ERLYWEB_ROOT = $(ERL_LIB)/erlyweb-0.7.3
+
 all:
 	sh make.sh
 	
@@ -10,8 +13,9 @@ docs:
 	-run edoc_run application "'ErlyWeb'" '"."' '[no_packages]'
 
 install:
-	
-	cp -r . `erl -noshell -eval 'io:format([code:lib_dir()]).' -s erlang halt`/erlyweb-0.7.3
+	cp -r . $(ERLYWEB_ROOT)
+	chmod +x $(ERLYWEB_ROOT)/scripts/create_app.sh
+	ln -sf $(ERLYWEB_ROOT)/scripts/create_app.sh $(ERL_LIB)/../bin/create_erlyweb_app.sh
 
 clean:
 	rm ebin/*.beam
