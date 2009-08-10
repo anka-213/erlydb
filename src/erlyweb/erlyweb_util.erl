@@ -29,11 +29,12 @@ create_app(AppName, Dir) ->
 	true ->
 	    AppDir = Dir ++ "/" ++ AppName,
 	    Dirs =
-		[SrcDir, ComponentsDir, WebDir, _EbinDir]
+		[SrcDir, ComponentsDir, WebDir, _EbinDir, _LogDir]
 		= [AppDir ++ "/src",
 		   AppDir ++ "/src/components",
 		   AppDir ++ "/www",
-		   AppDir ++ "/ebin"],
+		   AppDir ++ "/ebin",
+		   AppDir ++ "/log"],
 	    lists:foreach(
 	      fun(SubDir) ->
 		      ?Info("creating ~p", [SubDir]),
@@ -55,7 +56,9 @@ create_app(AppName, Dir) ->
 		 {WebDir ++ "/index.html",
 		  index(AppName)},
 		 {WebDir ++ "/style.css",
-		  css()}],
+		  css()},
+   		 {AppDir ++ "/yaws.conf",
+   		  yaws_conf(AppName)}],
 	    lists:foreach(
 	      fun({FileName, Bin}) ->
 		      create_file(FileName, Bin)
@@ -159,6 +162,21 @@ css() ->
 	"  padding:15px;\n"
 	"} \n"
 	"H1 {font-size: 1.5em;}",
+    iolist_to_binary(Text).
+
+yaws_conf(AppName) ->
+    Text =
+    ["logdir = log\n"
+    "ebin_dir = ebin\n"
+    "<server ", AppName, ">\n"
+    "    port = 8000\n"
+    "    docroot = www\n"
+    "	appmods = <\"/args\", yaws_showarg>\n"
+    "	appmods = <\"/", AppName, "\", erlyweb>\n"
+    "    <opaque>\n"
+    "       appname = ", AppName, "\n"
+    "    </opaque>\n"
+    "</server>"],
     iolist_to_binary(Text).
 
 magic_declaration("", _) ->
