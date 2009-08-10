@@ -9,7 +9,7 @@ app: src/erlang-psql-driver/psql.app.src
 
 docs:
 	erl -pa `pwd`/ebin \
-	-noshell
+	-noshell \
 	-run edoc_run application "'ErlyWeb'" '"."' '[no_packages]'
 
 install:

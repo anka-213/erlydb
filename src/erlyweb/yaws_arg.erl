@@ -173,7 +173,7 @@ pathinfo(Arg, Val) ->
 %% completely dependant on other #arg fields so it makes
 %% sense to offer it as if it was a part of the #arg's record.
 %%
-%% @spec get_app_root(A::arg()) -> string()
+%% @spec app_root(A::arg()) -> string()
 app_root(Arg) ->
     case Arg#arg.server_path of
 	"/" -> "";
