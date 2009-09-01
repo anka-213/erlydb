@@ -30,11 +30,15 @@ high-performance Erlang web server. For more information on Yaws, visit
 == Installation ==
 
 To install ErlyWeb, obtain the latest zip file from [http://erlyweb.org]
-and unzip it in your root Erlang code path. This path varies depending on your
-operating system (on OS X, it's '/usr/local/lib/erlang/lib'). If you don't know
-your path, you can discover it by starting the Erlang shell and calling
-"code:lib_dir()." (note that the last directory of the code path always
-erlang/lib).
+and run the following commands inside the erlyweb-X.XX directory:
+
+```
+$ make
+$ sudo make install
+'''
+
+This assumes you have Yaws installed under your Erlang lib directory
+(which you can find by calling code:lib_dir() in the Erlang shell).
 
 == Directory Structure ==
 ErlyWeb applications have the following directory structure:
@@ -48,6 +52,8 @@ ErlyWeb applications have the following directory structure:
                                   model source files
   www/                            contains static assets
   ebin/                           contains compiled .beam files
+  log/                            contains Yaws log files
+  yaws.conf                       configuration file for Yaws
 '''
 
 where AppName is the name of the application. The 'src', 'components'

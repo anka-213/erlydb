@@ -220,7 +220,7 @@ auto_compile(A, AppData, Options) ->
 	case lists:keysearch(auto_compile_exclude, 1,
 			     Options) of
 	    {value, {_, Val}} -> 
-		case string:str(yaws_arg:appmoddata(A),
+		case string:str(yaws_arg:pathinfo(A),
 				Val) of
 		    1 -> ok;
 		    _ -> auto_compile1(AppData, Options)
@@ -323,7 +323,7 @@ handle_request(A, AppController, Ewc, Rest, AppData, PostRenderFun) ->
 %% `exit({no_such_function, Err})'.
 %%
 %% If the request doesn't match any components, this function returns
-%% `{page, Path}', where Path is the arg's appmoddata field.
+%% `{page, Path}', where Path is the arg's pathinfo field (prefixed by app_root).
 %%
 %% If the parameter isn't in the form `{ewc, A}', this function returns
 %% the parameter unchanged without any extra processing.
@@ -467,7 +467,12 @@ render_response_body(A, Response, Controller, View, FuncName, Params,
 	     end,
     RenderFun =
 	fun(Ewc1) ->
-		Rendered = View:FuncName(render_subcomponent(Ewc1, AppData)),
+		% Check if there is a 2-arity version of the view function
+		Rendered =
+			case lists:member({FuncName,2}, View:module_info(exports)) of
+				true -> View:FuncName(A, render_subcomponent(Ewc1, AppData));
+				false -> View:FuncName(render_subcomponent(Ewc1, AppData))
+			end,
 		Controller:after_render(FuncName, Params, Rendered),
 		Rendered
 	end,
@@ -522,7 +527,7 @@ get_ewc(A) ->
 get_ewc(A, AppData) ->
     Prefix = erlyweb_util:get_url_prefix(A),
     case string:tokens(Prefix, "/") of
-	[] -> {page, "/"};
+	[] -> docroot_file(A);
 	[ComponentStr]->
 	    get_ewc(ComponentStr, "index", [A],
 		    AppData);
@@ -537,16 +542,26 @@ get_ewc(ComponentStr, FuncStr, [A | _] = Params,
 	{error, no_such_component} ->
 	    %% if the request doesn't match a controller's name,
 	    %% redirect it to /path
-	    Path = case yaws_arg:appmoddata(A) of
-		       [$/ | _ ] = P -> P;
-		       Other -> [$/ | Other]
-		   end,
-	    {page, Path};
+	    docroot_file(A);
 	{error, no_such_function} ->
 	    exit({no_such_function, {ComponentStr, FuncStr, length(Params)}});
 	{ok, Component} ->
 	    Component
     end.
+
+
+%% @doc Redirect to the application docroot.
+%%
+%% @spec docroot_file(A::arg()) -> {page, NewPath::string()} | 
+%%									{redirect, NewUrl::string()}
+docroot_file(A) ->
+	case yaws_arg:pathinfo(A) of
+		undefined ->
+			{redirect, yaws_arg:server_path(A) ++ "/"};
+		Path ->
+			FullPath = get_app_root(A) ++ Path,
+			{page, FullPath}
+	end.
 
 %% @doc Get the name for the application as specified in the opaque 
 %% 'appname' field in the YAWS configuration.
@@ -563,24 +578,12 @@ get_app_name(A) ->
     end.
 
 
-%% @doc Get the relative URL for the application's root path.
+%% @doc Refactoring wrapper for yaws_arg:app_root/1
 %% 
 %%
 %% @spec get_app_root(A::arg()) -> string()
 get_app_root(A) ->
-    ServerPath = yaws_arg:server_path(A),
-    L1 = length(ServerPath),
-    L2 = length(yaws_arg:appmoddata(A)),
-    if L2 > L1 ->
-	    "/";
-       true ->
-	    {First, _Rest} =
-		lists:split(
-		  length(ServerPath) -
-		  length(yaws_arg:appmoddata(A)),
-		  ServerPath),
-	    First
-    end.
+    yaws_arg:app_root(A).
 
 get_app_data(A) ->
     proplists:get_value(app_data_module, yaws_arg:opaque(A)).

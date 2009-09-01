@@ -29,11 +29,12 @@ create_app(AppName, Dir) ->
 	true ->
 	    AppDir = Dir ++ "/" ++ AppName,
 	    Dirs =
-		[SrcDir, ComponentsDir, WebDir, _EbinDir]
+		[SrcDir, ComponentsDir, WebDir, _EbinDir, _LogDir]
 		= [AppDir ++ "/src",
 		   AppDir ++ "/src/components",
 		   AppDir ++ "/www",
-		   AppDir ++ "/ebin"],
+		   AppDir ++ "/ebin",
+		   AppDir ++ "/log"],
 	    lists:foreach(
 	      fun(SubDir) ->
 		      ?Info("creating ~p", [SubDir]),
@@ -55,7 +56,9 @@ create_app(AppName, Dir) ->
 		 {WebDir ++ "/index.html",
 		  index(AppName)},
 		 {WebDir ++ "/style.css",
-		  css()}],
+		  css()},
+   		 {AppDir ++ "/yaws.conf",
+   		  yaws_conf(AppName)}],
 	    lists:foreach(
 	      fun({FileName, Bin}) ->
 		      create_file(FileName, Bin)
@@ -161,6 +164,21 @@ css() ->
 	"H1 {font-size: 1.5em;}",
     iolist_to_binary(Text).
 
+yaws_conf(AppName) ->
+    Text =
+    ["logdir = log\n"
+    "ebin_dir = ebin\n"
+    "<server ", AppName, ">\n"
+    "    port = 8000\n"
+    "    docroot = www\n"
+    "	appmods = <\"/args\", yaws_showarg>\n"
+    "	appmods = <\"/", AppName, "\", erlyweb>\n"
+    "    <opaque>\n"
+    "       appname = ", AppName, "\n"
+    "    </opaque>\n"
+    "</server>"],
+    iolist_to_binary(Text).
+
 magic_declaration("", _) ->
     "";
 magic_declaration(MagicStr, controller) ->
@@ -226,16 +244,20 @@ create_component(ComponentName, AppDir, Options) ->
 	      create_file(AppDir ++ "/src/components/" ++ FileName, Text)
       end, Files).
 
-%% @doc Get the  of the arg's appmoddata value up to the
+%% @doc Get the  of the arg's pathinfo value up to the
 %% first '?' symbol.
 %%
 %% @spec get_url_prefix(A::arg()) -> string()
 get_url_prefix(A) ->
-    lists:dropwhile(
-      fun($?) -> true;
-	 (_) -> false
-      end, yaws_arg:appmoddata(A)).
-
+    PathInfo = yaws_arg:pathinfo(A),
+    if	(PathInfo =:= undefined) ->
+		"";
+	true ->
+		lists:dropwhile(
+		      fun($?) -> true;
+			 (_) -> false
+		      end, PathInfo)
+    end.
 
 %% @doc Get the cookie's value from the arg.
 %% @equiv yaws_api:find_cookie_val(Name, yaws_headers:cookie(A))

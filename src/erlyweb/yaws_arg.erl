@@ -28,7 +28,8 @@
 	 querydata/1, querydata/2, appmoddata/1, appmoddata/2, docroot/1,
 	 docroot/2, fullpath/1, fullpath/2, cont/1, cont/2, state/1,
 	 state/2, pid/1, pid/2, opaque/1, opaque/2, appmod_prepath/1,
-	 appmod_prepath/2, pathinfo/1, pathinfo/2, request_path/1]).
+	 appmod_prepath/2, pathinfo/1, pathinfo/2, request_path/1,
+	 app_root/1]).
 -include("yaws_api.hrl").
 
 %% @doc Create a new 'arg' record.
@@ -103,12 +104,6 @@ querydata(Arg) ->
 querydata(Arg, Val) ->
     Arg#arg{querydata = Val}.
 
-appmoddata(Arg) ->
-    Arg#arg.appmoddata.
-
-appmoddata(Arg, Val) ->
-    Arg#arg{appmoddata = Val}.
-
 docroot(Arg) ->
     Arg#arg.docroot.
 
@@ -151,8 +146,44 @@ appmod_prepath(Arg) ->
 appmod_prepath(Arg, Val) ->
     Arg#arg{appmod_prepath = Val}.
 
+appmoddata(Arg) ->
+    case pathinfo(Arg) of
+	undefined -> "/";
+	Pathinfo -> Pathinfo
+    end.
+
+appmoddata(Arg, Val) ->
+    pathinfo(Arg, Val).
+
 pathinfo(Arg) ->
     Arg#arg.pathinfo.
 
+% If we change pathinfo value independently of the remaing values
+% then all code that might use them together will break.
+% Example: erlyweb:get_app_root(A) - now migrated here. See below.
+% If erlyweb used its own record we'd be free to store app_root there
+% but since we're wrapping yaws #arg we need to be carefull with
+% changes that might create an incoherent state.
 pathinfo(Arg, Val) ->
-    Arg#arg{pathinfo = Val}.
+    AppRoot = app_root(Arg),
+    A1 = Arg#arg{pathinfo=Val},
+    A2 = A1#arg{server_path=(AppRoot ++ Val)},
+    A2#arg{fullpath=(A2#arg.docroot ++ A2#arg.server_path)}.
+
+
+%% @doc Get the relative URL for the application's root path.
+%% This function was moved here from erlyweb because it's
+%% completely dependant on other #arg fields so it makes
+%% sense to offer it as if it was a part of the #arg's record.
+%%
+%% @spec app_root(A::arg()) -> string()
+app_root(Arg) ->
+    case Arg#arg.server_path of
+	"/" -> "";
+	ServerPath  ->
+	    L1 = if (Arg#arg.pathinfo =:= undefined) -> 0; true -> length(Arg#arg.pathinfo) end,
+	    ServerPath =Arg#arg.server_path,
+	    L2 = length(ServerPath),
+	    string:substr(ServerPath, 1, L2 - L1)
+    end.
+

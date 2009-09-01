@@ -10,7 +10,6 @@ For more information, visit http://erlyweb.org.
 
 In the ErlyWeb directory, execute
 
-./configure
 make
 sudo make install
 

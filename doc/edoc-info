@@ -1,16 +1,5 @@
 {application,'ErlyWeb'}.
 {packages,[]}.
-{modules,[erlsql,
-          erltl,
-          erlydb,
-          erlydb_base,
-          erlydb_field,
-          erlydb_mnesia,
-          erlydb_mysql,
-          erlydb_psql,
-          erlyweb,
-          erlyweb_forms,
-          erlyweb_util,
-          smerl,
-          yaws_arg,
-          yaws_headers]}.
+{modules,[erlsql,erltl,erlydb,erlydb_base,erlydb_field,erlydb_mnesia,
+          erlydb_mysql,erlydb_psql,erlyweb,erlyweb_forms,erlyweb_util,
+          mochinum,smerl,yaws_arg,yaws_headers]}.
