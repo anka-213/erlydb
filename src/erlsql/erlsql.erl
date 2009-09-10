@@ -132,7 +132,7 @@ encode({{Year,Month,Day}, {Hour,Minute,Second}}, false) ->
     lists:map(fun two_digits/1,[Year, Month, Day, Hour, Minute,Second]),
   lists:flatten(io_lib:format("'~s-~s-~s ~s:~s:~s'",
 [Year1,Month1,Day1,Hour1,Minute1,Second1]));
-encode({date, {Year, Day, Month}}, false) ->
+encode({date, {Year, Month, Day}}, false) ->
   [Year1,Month1,Day1] =
     lists:map(fun two_digits/1,[Year, Month, Day]),
   lists:flatten(io_lib:format("'~s-~s-~s'",[Year1,Month1,Day1]));
