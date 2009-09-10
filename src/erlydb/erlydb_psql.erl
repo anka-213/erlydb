@@ -297,8 +297,8 @@ get_select_result(Other, _) ->
 lists_to_binaries(Row) ->
     [to_binary(Field) || Field <- Row].
     
-to_binary(Field) when is_list(Field) -> 
-    list_to_binary(Field);
+to_binary([]) -> undefined;
+to_binary(Field) when is_list(Field) -> list_to_binary(Field);
 to_binary(Row) -> Row.    
 
 
