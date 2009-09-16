@@ -1,0 +1,6 @@
+ebin
+doc
+*.swp
+*.dump
+edoc-info
+Emakefile
