@@ -4,7 +4,7 @@
 %% @doc
 %% ErlSQL is a domain specific embedded language for
 %% expressing SQL statements in Erlang as well as a library
-%% for generating the literal equivalents of ErlSQL expressions. 
+%% for generating the literal equivalents of ErlSQL expressions.
 %%
 %% ErlSQL lets you describe SQL queries using a combination of Erlang
 %% lists, tuples, atoms and values in a way that resembles the
@@ -20,7 +20,7 @@
 %% those with unions, nested statements and aggregate functions, but
 %% it does not currently attempt to cover every feature and extension
 %% of the SQL language.
-%% 
+%%
 %% ErlSQL's benefits are:<br/>
 %% - Easy dynamic generation of SQL queries from Erlang by combining
 %%   native Erlang types rather than string fragments.<br/>
@@ -40,10 +40,10 @@
 -module(erlsql).
 -author("Yariv Sadan (yarivvv@gmail.com) (http://yarivsblog.com)").
 -export([sql/1,
-	 sql/2,
-	 unsafe_sql/1,
-	 unsafe_sql/2,
-	 encode/1]).
+     sql/2,
+     unsafe_sql/1,
+     unsafe_sql/2,
+     encode/1]).
 
 -define(L(Obj), io:format("LOG ~w ~p\n", [?LINE, Obj])).
 
@@ -62,7 +62,7 @@ sql(Esql) ->
 %% @doc Similar to sql/1, but accepts a boolean parameter
 %%   indicating if the return value should be a single binary
 %%   rather than an iolist.
-%% 
+%%
 %% @spec sql(ErlSQL::term(), boolean()) -> binary() | iolist()
 sql(Esql, true) ->
     iolist_to_binary(sql(Esql));
@@ -71,7 +71,7 @@ sql(Esql, false) ->
 
 %% @doc Generate an iolist (a tree of strings and/or binaries)
 %%  for a literal SQL statement that corresponds to the ESQL
-%%  structure. If the structure is invalid, this function 
+%%  structure. If the structure is invalid, this function
 %%  throws an exception.
 %%  This function allows writing literal WHERE, LIMIT
 %%  and other trailing clauses, such as {where, "a=" ++ Val},
@@ -105,7 +105,7 @@ encode(Val) ->
 %%  a SQL statement. This function can encode numbers, atoms,
 %%  date/time/datetime values, strings and binaries
 %%  (which it escapes automatically).
-%% 
+%%
 %% @spec encode(Val::term(), AsBinary::bool()) -> string() | binary()
 encode(Val, false) when Val == undefined; Val == null ->
     "null";
@@ -148,8 +148,8 @@ two_digits(Nums) when is_list(Nums) ->
 two_digits(Num) ->
     [Str] = io_lib:format("~b", [Num]),
     case length(Str) of
-	1 -> [$0 | Str];
-	_ -> Str
+    1 -> [$0 | Str];
+    _ -> Str
     end.
 
 sql2({select, Tables}, Safe)->
@@ -179,6 +179,7 @@ sql2({select, Modifier, Fields, {from, Tables}, {where, WhereExpr}, Extras},
     select(Modifier, Fields, Tables, WhereExpr, Extras, Safe);
 sql2({select, Modifier, Fields, {from, Tables}, WhereExpr, Extras}, Safe) ->
     select(Modifier, Fields, Tables, WhereExpr, Extras, Safe);
+
 sql2({Select1, union, Select2}, Safe) ->
     [$(, sql2(Select1, Safe), <<") UNION (">>, sql2(Select2, Safe), $)];
 sql2({Select1, union, Select2, {where, WhereExpr}}, Safe) ->
@@ -186,6 +187,15 @@ sql2({Select1, union, Select2, {where, WhereExpr}}, Safe) ->
 sql2({Select1, union, Select2, Extras}, Safe) ->
     [sql2({Select1, union, Select2}, Safe), extra_clause(Extras, Safe)];
 sql2({Select1, union, Select2, {where, _} = Where, Extras}, Safe) ->
+    [sql2({Select1, union, Select2, Where}, Safe), extra_clause(Extras, Safe)];
+
+sql2({Select1, union_all, Select2}, Safe) ->
+    [$(, sql2(Select1, Safe), <<") UNION ALL (">>, sql2(Select2, Safe), $)];
+sql2({Select1, union_all, Select2, {where, WhereExpr}}, Safe) ->
+    [sql2({Select1, union, Select2}, Safe), where(WhereExpr, Safe)];
+sql2({Select1, union_all, Select2, Extras}, Safe) ->
+    [sql2({Select1, union, Select2}, Safe), extra_clause(Extras, Safe)];
+sql2({Select1, union_all, Select2, {where, _} = Where, Extras}, Safe) ->
     [sql2({Select1, union, Select2, Where}, Safe), extra_clause(Extras, Safe)];
 
 sql2({insert, Table, Params}, _Safe) ->
@@ -232,59 +242,59 @@ select(Modifier, Fields, Tables, WhereExpr, Safe) ->
 select(Modifier, Fields, Tables, WhereExpr, Extras, Safe) ->
     S1 = <<"SELECT ">>,
     S2 = case Modifier of
-	     undefined ->
-		 S1;
-	     Modifier ->
-		 Modifier1 = case Modifier of
-				 distinct -> 'DISTINCT';
-				 'all' -> 'ALL';
-				 Other -> Other
-			     end,
-		 [S1, convert(Modifier1), 32]
-	 end,
+         undefined ->
+         S1;
+         Modifier ->
+         Modifier1 = case Modifier of
+                 distinct -> 'DISTINCT';
+                 'all' -> 'ALL';
+                 Other -> Other
+                 end,
+         [S1, convert(Modifier1), 32]
+     end,
 
     ListFun = fun(Val) -> expr2(Val, Safe) end,
     S3 = [S2, make_list(Fields, ListFun)],
     S4 = case Tables of
-	     undefined ->
-		 S3;
-	     _Other ->
-		 [S3, <<" FROM ">>, make_list(Tables, ListFun)]
-	 end,
+         undefined ->
+         S3;
+         _Other ->
+         [S3, <<" FROM ">>, make_list(Tables, ListFun)]
+     end,
 
     S5 = case where(WhereExpr, Safe) of
-	     undefined ->
-		 S4;
-	     WhereClause ->
-		 [S4, WhereClause]
-	 end,
-    
-    case extra_clause(Extras, Safe) of  
-	undefined -> S5;
-	Expr -> [S5, Expr]
+         undefined ->
+         S4;
+         WhereClause ->
+         [S4, WhereClause]
+     end,
+
+    case extra_clause(Extras, Safe) of
+    undefined -> S5;
+    Expr -> [S5, Expr]
     end.
 
 where(undefined, _) -> [];
 where(Expr, true) when is_list(Expr); is_binary(Expr) ->
     throw({error, {unsafe_expression, Expr}});
 where(Expr, false) when is_binary(Expr) ->
-    Res = case Expr of	
-	      <<"WHERE ", _Rest/binary>> = Expr1 ->
-		  Expr1;
-	      <<"where ", Rest/binary>> ->
-		  <<"WHERE ", Rest/binary>>;
-	      Expr1 ->
-		  <<"WHERE ", Expr1/binary>>
-		      end,
+    Res = case Expr of
+          <<"WHERE ", _Rest/binary>> = Expr1 ->
+          Expr1;
+          <<"where ", Rest/binary>> ->
+          <<"WHERE ", Rest/binary>>;
+          Expr1 ->
+          <<"WHERE ", Expr1/binary>>
+              end,
     [32, Res];
 where(Exprs, false) when is_list(Exprs)->
     where(list_to_binary(Exprs), false);
 where(Expr, Safe) when is_tuple(Expr) ->
     case expr(Expr, Safe) of
-	undefined ->
-	    [];
-	Other ->
-	    [<<" WHERE ">>, Other]
+    undefined ->
+        [];
+    Other ->
+        [<<" WHERE ">>, Other]
     end.
 
 extra_clause(undefined, _Safe) -> undefined;
@@ -293,15 +303,15 @@ extra_clause(Expr, true) when is_binary(Expr) ->
 extra_clause(Expr, false) when is_binary(Expr) -> [32, Expr];
 extra_clause([Expr], false) when is_binary(Expr) -> [32, Expr];
 extra_clause(Exprs, Safe) when is_list(Exprs) ->
-    case is_tuple(hd(Exprs)) of 
-	true ->
-	    extra_clause2(Exprs, false);
-	false ->
-	    if not Safe ->
-		    [32, list_to_binary(Exprs)];
-	       true ->
-		    throw({error, {unsafe_expression, Exprs}})
-	    end
+    case is_tuple(hd(Exprs)) of
+    true ->
+        extra_clause2(Exprs, false);
+    false ->
+        if not Safe ->
+            [32, list_to_binary(Exprs)];
+           true ->
+            throw({error, {unsafe_expression, Exprs}})
+        end
     end;
 extra_clause(Exprs, true) when is_list(Exprs) ->
     extra_clause2(Exprs, true);
@@ -319,49 +329,49 @@ extra_clause({special, Val}, _Safe) ->
 extra_clause({order_by, ColNames}, Safe) ->
     [<<" ORDER BY ">>,
      make_list(ColNames,
-		      fun({Name, Modifier}) when
-			 Modifier == 'asc' ->
-			      [expr(Name, Safe), 32, convert('ASC')];
-			 ({Name, Modifier}) when
-			 Modifier == 'desc' ->
-			      [expr(Name, Safe), 32, convert('DESC')];
-			 (Name) ->
-			      expr(Name, Safe)
-		      end)].
+              fun({Name, Modifier}) when
+             Modifier == 'asc' ->
+                  [expr(Name, Safe), 32, convert('ASC')];
+             ({Name, Modifier}) when
+             Modifier == 'desc' ->
+                  [expr(Name, Safe), 32, convert('DESC')];
+             (Name) ->
+                  expr(Name, Safe)
+              end)].
 
 extra_clause2(Exprs, Safe) ->
     Res = lists:foldl(
-	    fun(undefined, Acc) ->
-		    Acc;
-	       (Expr, Acc) ->
-		    [extra_clause(Expr, Safe) | Acc]
-	    end, [], Exprs),
+        fun(undefined, Acc) ->
+            Acc;
+           (Expr, Acc) ->
+            [extra_clause(Expr, Safe) | Acc]
+        end, [], Exprs),
     [lists:reverse(Res)].
 
 insert(Table, Params) ->
     Names = make_list(Params, fun({Name, _Value}) ->
-					     convert(Name)
-				     end),
+                         convert(Name)
+                     end),
     Values = [$(, make_list(
-		    Params,
-		    fun({_Name, Value}) ->
-			    encode(Value)
-		    end),
-		$)],
+            Params,
+            fun({_Name, Value}) ->
+                encode(Value)
+            end),
+        $)],
     make_insert_query(Table, Names, Values).
 
 insert(Table, Fields, Records) ->
     Names = make_list(Fields, fun convert/1),
     Values =
-	make_list(
-	  Records,
-	  fun(Record) ->
-		  Record1 = if is_tuple(Record) ->
-				    tuple_to_list(Record);
-			       true -> Record
-			    end,
-		  [$(, make_list(Record1, fun encode/1), $)]
-	  end),    
+    make_list(
+      Records,
+      fun(Record) ->
+          Record1 = if is_tuple(Record) ->
+                    tuple_to_list(Record);
+                   true -> Record
+                end,
+          [$(, make_list(Record1, fun encode/1), $)]
+      end),
     make_insert_query(Table, Names, Values).
 
 make_insert_query(Table, Names, Values) ->
@@ -376,9 +386,9 @@ update(Table, Props, Where, Safe) when not is_list(Props) ->
 update(Table, Props, Where, Safe) ->
     S1 = [<<"UPDATE ">>, convert(Table), <<" SET ">>],
     S2 = make_list(Props,
-		   fun({Field, Val}) ->
-			   [convert(Field), <<" = ">>, expr(Val, Safe)]
-		   end),
+           fun({Field, Val}) ->
+               [convert(Field), <<" = ">>, expr(Val, Safe)]
+           end),
     [S1, S2, where(Where, Safe)].
 
 delete(Table, Safe) ->
@@ -390,20 +400,20 @@ delete(Table, Using, WhereExpr, Safe) ->
 delete(Table, Using, WhereExpr, Extras, Safe) ->
     S1 = [<<"DELETE FROM ">>, convert(Table)],
     S2 = if Using == undefined ->
-		 S1;
-	    true ->
-		 [S1, <<" USING ">>, make_list(Using, fun convert/1)]
-	 end,
+         S1;
+        true ->
+         [S1, <<" USING ">>, make_list(Using, fun convert/1)]
+     end,
     S3 = case where(WhereExpr, Safe) of
-	     undefined ->
-		 S2;
-	     WhereClause ->
-		 [S2, WhereClause]
-	 end,
+         undefined ->
+         S2;
+         WhereClause ->
+         [S2, WhereClause]
+     end,
     if Extras == undefined ->
-	    S3;
+        S3;
        true ->
-	    [S3, extra_clause(Extras, Safe)]
+        [S3, extra_clause(Extras, Safe)]
     end.
 
 convert(Val) when is_atom(Val)->
@@ -415,7 +425,7 @@ make_list(Vals, ConvertFun) when is_list(Vals) ->
         lists:foldl(
           fun(Val, {Acc, false}) ->
                   {[ConvertFun(Val) | Acc], true};
-	     (Val, {Acc, true}) ->
+         (Val, {Acc, true}) ->
                   {[ConvertFun(Val) , $, | Acc], true}
           end, {[], false}, Vals),
     lists:reverse(Res);
@@ -453,32 +463,32 @@ expr({Val, Op, {_, union, _, _, _} = Subquery}, Safe) ->
     subquery(Val, Op, Subquery, Safe);
 expr({_, in, []}, _Safe) -> <<"0">>;
 expr({Val, Op, Values}, Safe) when (Op == in orelse
-			      Op == any orelse
-			      Op == some) andalso
-			     is_list(Values) ->
+                  Op == any orelse
+                  Op == some) andalso
+                 is_list(Values) ->
     [expr2(Val, Safe), subquery_op(Op), make_list(Values, fun encode/1), $)];
 expr({undefined, Op, Expr2}, Safe) when Op == 'and'; Op == 'not' ->
     expr(Expr2, Safe);
 expr({Expr1, Op, undefined}, Safe) when Op == 'and'; Op == 'not' ->
     expr(Expr1, Safe);
 expr({Expr1, Op, Expr2}, Safe)  ->
-    {B1, B2} = 
-	if (Op == 'and' orelse Op == 'or') ->
-		{check_expr(Expr1, Safe), check_expr(Expr2, Safe)};
-	   true ->
-		{expr2(Expr1, Safe), expr2(Expr2, Safe)}
-	end,
+    {B1, B2} =
+    if (Op == 'and' orelse Op == 'or') ->
+        {check_expr(Expr1, Safe), check_expr(Expr2, Safe)};
+       true ->
+        {expr2(Expr1, Safe), expr2(Expr2, Safe)}
+    end,
     [$(, B1, 32, op(Op), 32, B2, $)];
 
 expr({list, Vals}, _Safe) when is_list(Vals) ->
     [$(, make_list(Vals, fun encode/1), $)];
 expr({Op, Exprs}, Safe) when is_list(Exprs) ->
     [$(, lists:foldl(
-	   fun(Expr, []) ->
-		   expr(Expr, Safe);
-	      (Expr, Acc) ->
-		   [expr(Expr, Safe), 32, op(Op), 32, Acc]
-	   end, [], lists:reverse(Exprs)), $)];
+       fun(Expr, []) ->
+           expr(Expr, Safe);
+          (Expr, Acc) ->
+           [expr(Expr, Safe), 32, op(Op), 32, Acc]
+       end, [], lists:reverse(Exprs)), $)];
 expr('?', _Safe) -> $?;
 expr(null, _Safe) -> <<"NULL">>;
 expr(Val, _Safe) when is_atom(Val) -> convert(Val);
@@ -486,9 +496,9 @@ expr(Val, _Safe) -> encode(Val).
 
 check_expr(Expr, Safe) when is_list(Expr); is_binary(Expr) ->
     if Safe ->
-	    throw({error, {unsafe_expression, Expr}});
+        throw({error, {unsafe_expression, Expr}});
        true ->
-	    iolist_to_binary([$(, Expr, $)])
+        iolist_to_binary([$(, Expr, $)])
     end;
 check_expr(Expr, Safe) -> expr(Expr, Safe).
 
@@ -509,7 +519,7 @@ subquery_op(some) -> <<" SOME (">>.
 expr2(undefined, _Safe) -> <<"NULL">>;
 expr2(Expr, _Safe) when is_atom(Expr) -> convert(Expr);
 expr2(Expr, Safe) -> expr(Expr, Safe).
-    
+
 
 quote(String) when is_list(String) ->
     [39 | lists:reverse([39 | quote(String, [])])];	%% 39 is $'
