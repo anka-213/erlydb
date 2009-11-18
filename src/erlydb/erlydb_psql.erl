@@ -215,10 +215,15 @@ q2(Statement) ->
 %%   psql_result()
 q2(Statement, _Options) ->
     Pid = psql:allocate(),
-    Result = q3(Pid, Statement),
-    psql:free(),
-    Result.
-
+    try q3(Pid, Statement) of
+        Result ->
+            Result
+    catch
+        Error ->
+            throw(Error)
+    after
+        psql:free()
+    end.
 
 q3(Pid, Sql) ->
     %%?L(Sql),
