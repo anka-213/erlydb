@@ -31,8 +31,8 @@ erlydb_psql_init() ->
 
 
 code_gen(Database) ->
-    erlydb:code_gen(Database, [language, project, developer, musician, employee, 
-                               person, customer, store, item], []).
+    erlydb:code_gen([language, project, developer, musician, employee, 
+                               person, customer, store, item], Database, []).
 
 test() ->
     test(mysql).
@@ -73,7 +73,7 @@ test(Database) ->
 		  %% executes an INSERT statement
 		  language:save(Language)
 	  end, Languages),
-
+	
     %% demonstrate getters
     <<"Erlang">> = language:name(Erlang),
     <<"functional/dynamic/concurrent">> = language:paradigm(Erlang),
@@ -82,23 +82,22 @@ test(Database) ->
     %% demonstrate setter
     J1 = language:creation_year(Java, 1993),
 
-    %% executes an UPDATE statement
+	%% executes an UPDATE statement
     J2 = language:save(J1),
 
-    1993 = language:creation_year(J2),
+	1993 = language:creation_year(J2),
 
     %% Let's run some queries
     E1 = language:find_id(language:id(Erlang)),
     true = E1 == Erlang,
 
-
     [E2] = language:find({name, '=', "Erlang"}),
     true = E2 == Erlang,
 
-    E3 = language:find_first({paradigm, like, "functional%"}),
+    E3 = language:find_first({paradigm, like, "functional%"}, {order_by, name}),
     true = E3 == Erlang,
 
-    [E4, J4, R4] = language:find(undefined, {order_by, id}),
+    [E4, J4, R4] = language:find(undefined, {order_by, name}),
     true =
 	E4 == Erlang andalso 
 	J4 == J1 andalso 
@@ -161,7 +160,7 @@ test(Database) ->
     true = language:id(Erlang) == project:language_id(Ejabberd2),
 
     %% let's get all the projects for a language
-    [Yaws3, Ejabberd3, OpenPoker3] = language:projects_with(Erlang, {order_by, id}),
+    [Ejabberd3, OpenPoker3, Yaws3] = language:projects_with(Erlang, {order_by, name}),
 
     true =
 	Yaws3 == Yaws1
@@ -173,13 +172,12 @@ test(Database) ->
 		      Erlang, {name,'=',"Yaws"}),
     Yaws4 = Yaws1,
 
-    Yaws5 = language:projects_first_with(Erlang, {order_by, id}),
-    Yaws4 = Yaws5,
-
-    Ejabberd4 = language:projects_first(
-			  Erlang, {name, like, "%e%"}, {order_by, id}),
+    Ejabberd4 = language:projects_first_with(Erlang, {order_by, name}),
     Ejabberd4 = Ejabberd3,
 
+    Ejabberd5 = language:projects_first(
+			  Erlang, {name, like, "%e%"}, {order_by, name}),
+    Ejabberd5 = Ejabberd4,
 
     %% Let's show some many-to-many features
 
@@ -192,22 +190,21 @@ test(Database) ->
 	  [project:new(<<"OTP">>, <<"The Open Telephony Platform">>, Erlang),
 	   project:new(<<"Mnesia">>, <<"A distributed database "
 		       "engine written in Erlang">>, Erlang)]),
-
     %% Next, add some developers
     [Joe, Ulf, Klacke] =
 	lists:map(
 	  fun(Developer) ->
 		  developer:save(Developer)
 	  end,
-	  [developer:new(<<"Joe Armstrong">>, <<"Sweden">>),
-	   developer:new(<<"Ulf Wiger">>, <<"Sweden">>),
-	   developer:new(<<"Claes (Klacke) Wikstrom">>, <<"Sweden">>)]),
+	  [developer:new(<<"Sweden">>, <<"Joe Armstrong">>),
+	   developer:new(<<"Sweden">>, <<"Ulf Wiger">>),
+	   developer:new(<<"Sweden">>, <<"Claes (Klacke) Wikstrom">>)]),
 
     %% Add some developers to our projects
     ok = project:add_developer(OTP, Joe),
     ok = project:add_developer(OTP, Klacke),
     ok = project:add_developer(OTP, Ulf),
-    
+
     %% Add some projects to our developers
     ok = developer:add_project(Klacke, Yaws1),
     ok = developer:add_project(Klacke, Mnesia),
@@ -226,7 +223,7 @@ test(Database) ->
     
     %% SELECT query, from the other direction
     [Yaws1, OTP, Mnesia] =
-	developer:projects(Klacke),
+       developer:projects(Klacke),
 
     %% Klacke, nothing personal here :)
     1 = developer:remove_project(Klacke, Yaws1),
@@ -256,12 +253,13 @@ test2(_Driver) ->
       end),
     3 = developer:count(),
 
+    % verify expected syntax for db fields
+    [id,age,country,genre,instrument,name] = musician:db_field_names(),
     Musicians =
 	[
-	 musician:new(<<"Jimmy">>, 26, <<"USA">>, <<"Rock">>, <<"Guitar">>),
-	 musician:new(<<"Janis">>, 27, <<"USA">>, <<"Blues">>, <<"Vocals">>),
-	 musician:new(<<"Jim">>, 28, <<"Australia">>, <<"Rock">>,
-		      <<"Vocals">>)],
+	 musician:new(26, <<"USA">>, <<"Rock">>, <<"Guitar">>, <<"Jimmy">>),
+	 musician:new(27, <<"USA">>, <<"Blues">>, <<"Vocals">>, <<"Janis">>),
+	 musician:new(28, <<"Australia">>, <<"Rock">>, <<"Vocals">>, <<"Jim">>)],
     
     lists:map(fun(M) ->
 		      musician:save(M)

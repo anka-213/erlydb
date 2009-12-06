@@ -11,7 +11,7 @@
 %%
 %% Postgresql driver is an OTP application.
 %% Define database details and authetication credentials for the driver pool
-%% in psql.app.src and run 'make app' to crate an OTP-ish ebin/psql.app
+%% in psql.app.src and run 'make app' to create an OTP-ish ebin/psql.app
 %%
 %% For license information see LICENSE.txt
 
@@ -148,16 +148,18 @@ parse_default(DefaultStr) ->
     end.
 
 %%@doc Fixes statement for postgres-specific elements, such as using sequence
-%%when insert (instead of autoicrement), LIMIT/OFFSET syntax when paginating,
+%%when insert (instead of autoincrement), LIMIT/OFFSET syntax when paginating,
 %%and so on
 fix_statement({select, _Fields, _From, _Where, Extras}) ->
     {select, _Fields, _From, _Where, extras(Extras)};
-fix_statement({insert, Table, Fields, Rows}) ->
-    Rows2 = lists:map(fun(Row) ->
-        {ok, Id} = get_next_insert_id(Table, []),
-        [Id] ++ Row
-        end, Rows),
-    {insert, Table,  [id] ++ Fields, Rows2};
+% no need to fix_statement given we use "serial" in the psql DDL and retrieve
+% the assigned ID if needed via a later invocation of get_last_insert_id/2
+%fix_statement({insert, Table, Fields, Rows}) ->
+%    Rows2 = lists:map(fun(Row) ->
+%        {ok, Id} = get_next_insert_id(Table, []),
+%        [Id] ++ Row
+%        end, Rows),
+%    {insert, Table,  [id] ++ Fields, Rows2};
 fix_statement(_X) ->
     _X.
 

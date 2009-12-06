@@ -148,7 +148,7 @@ options(Field) ->
 %% '''
 %%
 %% @spec erl_type(Field::erlydb_field()) -> binary | integer | float | date |
-%%  time | datetime
+%%  time | datetime | uuid
 erl_type(Field) ->
     Field#erlydb_field.erl_type.
 
@@ -206,6 +206,7 @@ is_transient(Field) ->
 get_erl_type({Type, _Len}) -> get_erl_type(Type);
 get_erl_type(Type) ->
     case Type of
+	uuid -> binary;
 	varchar -> binary;
 	char -> binary;
   'character varying' -> binary;
@@ -250,6 +251,7 @@ get_html_binary_input_type({Type, _Len}) ->
 
 get_html_binary_input_type(Type) ->
     case Type of
+	uuid -> text_field;
 	varchar -> text_field;
   'character varying' -> text_field;
 	char -> text_field;

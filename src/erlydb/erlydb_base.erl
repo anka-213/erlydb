@@ -482,7 +482,16 @@ format_time({Hour, Minute, Second}) ->
 new(Module) ->
     Rec = erlang:make_tuple(Module:db_num_fields() + 2, undefined),
     Rec1 = set_is_new(Rec, true),
-    set_module(Rec1, Module).
+    % If the first PK column is a UUID, assign it to something useful now
+    PkField = hd(Module:db_pk_fields()),
+    Rec2 = case erlydb_field:type(PkField) of
+            uuid ->
+                FName = erlydb_field:name(PkField),
+				NewUuid = list_to_binary(uuid:get_uuid()),
+                Module:FName(Rec1, NewUuid);
+            _ -> Rec1
+           end,
+    set_module(Rec2, Module).
 
 %% @doc Create a new record, setting its field values
 %% according to the key/value pairs in the Fields property list.

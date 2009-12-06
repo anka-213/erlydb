@@ -673,11 +673,20 @@ add_pk_fk_field_names(MetaMod, PkFieldNames) ->
 %% project:new("Yaws", Lang) == project:new("Yaws", language:id(Lang))
 make_new_func(Module, Fields) ->
     L = 1,
-    {Params2, Vals2} =
+	{Params2, Vals2} =
 	lists:foldl(
 	  fun(Field, {Params, Vals}) ->
-		  case erlydb_field:extra(Field) == identity of
-		      true -> {Params, [{atom, L, undefined} | Vals]};
+          ExcludeFromNewParameterList = ((erlydb_field:extra(Field) == identity) or ((erlydb_field:type(Field) == uuid) and (erlydb_field:key(Field) == primary))),
+		  case ExcludeFromNewParameterList of
+		      true ->
+				  case erlydb_field:extra(Field) of
+                      identity -> {Params, [{atom, L, undefined} | Vals]};   % an identity will be 'undefined' when using contructor
+                      _ -> {Params, [{call,L,
+                              {atom,L,list_to_binary},
+                              [{call,L,
+                                     {remote,L,{atom,L,uuid},{atom,L,get_uuid}},
+                                     []}]} | Vals]}   % get a valid UUID!
+                  end;
 		      false ->
 			  Name = erlydb_field:name(Field),
 			  {Stripped, Name1} = strip_id_chars(Name),

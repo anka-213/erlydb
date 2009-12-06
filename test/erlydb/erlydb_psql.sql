@@ -1,16 +1,16 @@
-DROP TABLE language;
-DROP TABLE project;
-DROP TABLE person;
-DROP TABLE person_project;
-DROP TABLE customer;
-DROP TABLE store;
-DROP TABLE item;
-DROP TABLE customer_store;
-DROP TABLE customer_customer;
+DROP TABLE IF EXISTS language;
+DROP TABLE IF EXISTS project;
+DROP TABLE IF EXISTS person;
+DROP TABLE IF EXISTS person_project;
+DROP TABLE IF EXISTS customer;
+DROP TABLE IF EXISTS store;
+DROP TABLE IF EXISTS item;
+DROP TABLE IF EXISTS customer_store;
+DROP TABLE IF EXISTS customer_customer;
 
 
 CREATE TABLE language (
-	id SERIAL PRIMARY KEY,
+	id UUID PRIMARY KEY,
 	name VARCHAR(30),
 	description TEXT,
 	paradigm VARCHAR(30),
@@ -18,10 +18,10 @@ CREATE TABLE language (
 );
 
 CREATE TABLE project (
-	id SERIAL PRIMARY KEY,
+	id UUID PRIMARY KEY,
 	name VARCHAR(30),
 	description TEXT,
-	language_id INTEGER
+	language_id UUID
 );
 
 CREATE TABLE person (
@@ -39,7 +39,7 @@ CREATE TABLE person (
 
 CREATE TABLE person_project(
 	person_id INTEGER,
-	project_id INTEGER,
+	project_id UUID,
     PRIMARY KEY (person_id, project_id)
 );
 	

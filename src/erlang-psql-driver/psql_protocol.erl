@@ -198,7 +198,8 @@ data_type(1083) -> time;
 data_type(1114) -> datetime;
 data_type(1184) -> datetime;
 data_type(1266) -> time;
-data_type(1700) -> float.
+data_type(1700) -> float;
+data_type(2950) -> uuid.
 
 %%====================================================================
 %% Errors
