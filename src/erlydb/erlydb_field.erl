@@ -148,7 +148,7 @@ options(Field) ->
 %% '''
 %%
 %% @spec erl_type(Field::erlydb_field()) -> binary | integer | float | date |
-%%  time | datetime | uuid
+%%  time | datetime | uuid | tsvector
 erl_type(Field) ->
     Field#erlydb_field.erl_type.
 
@@ -207,9 +207,10 @@ get_erl_type({Type, _Len}) -> get_erl_type(Type);
 get_erl_type(Type) ->
     case Type of
 	uuid -> binary;
+	tsvector -> binary;
 	varchar -> binary;
 	char -> binary;
-  'character varying' -> binary;
+	'character varying' -> binary;
 	binary -> binary;
 	varbinary -> binary;
 	blob -> binary;
@@ -228,7 +229,7 @@ get_erl_type(Type) ->
 	datetime -> datetime;
 	date -> date;
 	timestamp -> datetime;
-  'timestamp without time zone' -> datetime;
+	'timestamp without time zone' -> datetime;
 	time -> time;
 	year -> integer;
 	Other -> Other
@@ -252,8 +253,9 @@ get_html_binary_input_type({Type, _Len}) ->
 get_html_binary_input_type(Type) ->
     case Type of
 	uuid -> text_field;
+	tsvector -> text_field;
 	varchar -> text_field;
-  'character varying' -> text_field;
+	'character varying' -> text_field;
 	char -> text_field;
 	binary -> text_field;
 	varbinary -> text_field;

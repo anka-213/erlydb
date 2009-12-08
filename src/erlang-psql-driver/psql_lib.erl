@@ -25,6 +25,8 @@ type_cast(SqlValue, Desc) when Desc#field.type == string ->
     binary_to_list(SqlValue);
 type_cast(SqlValue, Desc) when Desc#field.type == uuid ->
     binary_to_list(SqlValue);
+type_cast(SqlValue, Desc) when Desc#field.type == tsvector ->
+    binary_to_list(SqlValue);
 type_cast(SqlValue, Desc) when Desc#field.type == int ->
     List = binary_to_list(SqlValue),
     case catch list_to_integer(List) of
