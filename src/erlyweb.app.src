@@ -1,0 +1,7 @@
+{application, erlyweb,
+ [{description, "The Erlang twist on web frameworks"},
+  {vsn, "0.7.3"},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel, stdlib]}
+]}.
