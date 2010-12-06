@@ -1,6 +1,3 @@
-ERL_LIB = `erl -noshell -eval 'io:format([code:lib_dir()]).' -s erlang halt`
-ERLYWEB_ROOT = $(ERL_LIB)/erlyweb-0.7.3
-
 all:
 	sh make.sh
 	
@@ -10,12 +7,7 @@ app: src/erlang-psql-driver/psql.app.src
 docs:
 	erl -pa `pwd`/ebin \
 	-noshell \
-	-run edoc_run application "'ErlyWeb'" '"."' '[no_packages]'
-
-install:
-	cp -r . $(ERLYWEB_ROOT)
-	chmod +x $(ERLYWEB_ROOT)/scripts/create_app.sh
-	ln -sf $(ERLYWEB_ROOT)/scripts/create_app.sh $(ERL_LIB)/../bin/create_erlyweb_app.sh
+	-run edoc_run application "'ErlyDB'" '"."' '[no_packages]'
 
 clean:
 	rm ebin/*.beam

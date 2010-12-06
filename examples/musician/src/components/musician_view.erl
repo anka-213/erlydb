@@ -1,2 +1,0 @@
--module(musician_view).
--erlyweb_magic(erlyweb_view).

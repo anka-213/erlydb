@@ -1,2 +1,0 @@
--module(musician_controller).
--erlyweb_magic(erlyweb_controller).

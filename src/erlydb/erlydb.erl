@@ -98,7 +98,6 @@
     code_gen/4,
     code_gen/5]).
 
--import(erlyweb_util, [log/5]).
 -define(Debug(Msg, Params), log(?MODULE, ?LINE, debug, Msg, Params)).
 -define(Info(Msg, Params), log(?MODULE, ?LINE, info, Msg, Params)).
 -define(Error(Msg, Params), log(?MODULE, ?LINE, error, Msg, Params)).
@@ -106,6 +105,11 @@
 %% useful for debugging
 -define(L(Obj), io:format("LOG ~w ~p\n", [?LINE, Obj])).
 -define(S(Obj), io:format("LOG ~w ~s\n", [?LINE, Obj])).
+
+%% @hidden
+log(Module, Line, Level, Msg, Params) ->
+    io:format("~p:~p:~p: " ++ Msg, [Level, Module, Line] ++ Params),
+    io:format("~n").
 
 %% You can add more aggregate function names here and they will be generated
 %% automatically for your modules.
@@ -570,7 +574,7 @@ get_db_fields(Module, DbFields) ->
 		DefinedFields1 =
 		    lists:map(fun({_Name, _Atts} = F) -> F;
 				 (Name) -> {Name, []}
-			      end, lists:usort(DefinedFields)),
+			      end, DefinedFields),
 		
 		PkFields = [{erlydb_field:name(Field), []} ||
 			       Field <- DbFields,

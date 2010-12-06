@@ -1,5 +1,5 @@
-{application, erlyweb,
- [{description, "The Erlang twist on web frameworks"},
+{application, erlydb,
+ [{description, "The Erlang Database Abstraction from ErlyWeb"},
   {vsn, "0.7.3"},
   {modules, []},
   {registered, []},
