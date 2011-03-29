@@ -2,5 +2,6 @@ ebin
 doc
 *.swp
 *.dump
+*.beam
 edoc-info
 Emakefile
