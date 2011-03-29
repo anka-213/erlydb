@@ -337,7 +337,7 @@ extra_clause(Exprs, true) when is_list(Exprs) ->
 extra_clause({limit, Num}, _Safe) ->
     [<<" LIMIT ">>, encode(Num)];
 extra_clause({limit, Offset, Num}, _Safe) ->
-    [<<" LIMIT ">>, encode(Offset), $, , encode(Num)];
+    [<<" LIMIT ">>, encode(Offset), <<", ">> , encode(Num)];
 extra_clause({group_by, ColNames}, _Safe) ->
     [<<" GROUP BY ">>, make_list(ColNames, fun convert/1)];
 extra_clause({group_by, ColNames, having, Expr}, Safe) ->
@@ -359,13 +359,8 @@ extra_clause({order_by, ColNames}, Safe) ->
               end)].
 
 extra_clause2(Exprs, Safe) ->
-    Res = lists:foldl(
-        fun(undefined, Acc) ->
-            Acc;
-           (Expr, Acc) ->
-            [extra_clause(Expr, Safe) | Acc]
-        end, [], Exprs),
-    [lists:reverse(Res)].
+    Res = [extra_clause(Expr,Safe) || Expr <- Exprs, Expr =/= undefined],
+    [Res].
 
 insert(Table, Params) ->
     Names = make_list(Params, fun({Name, _Value}) ->
@@ -440,14 +435,7 @@ convert(Val) when is_atom(Val)->
     Bin.
 
 make_list(Vals, ConvertFun) when is_list(Vals) ->
-    {Res, _} =
-        lists:foldl(
-          fun(Val, {Acc, false}) ->
-                  {[ConvertFun(Val) | Acc], true};
-         (Val, {Acc, true}) ->
-                  {[ConvertFun(Val) , $, | Acc], true}
-          end, {[], false}, Vals),
-    lists:reverse(Res);
+    string:join([[ConvertFun(Val)] || Val <- Vals],", ");
 make_list(Val, ConvertFun) ->
     ConvertFun(Val).
 
@@ -502,12 +490,8 @@ expr({Expr1, Op, Expr2}, Safe)  ->
 expr({list, Vals}, _Safe) when is_list(Vals) ->
     [$(, make_list(Vals, fun encode/1), $)];
 expr({Op, Exprs}, Safe) when is_list(Exprs) ->
-    [$(, lists:foldl(
-       fun(Expr, []) ->
-           expr(Expr, Safe);
-          (Expr, Acc) ->
-           [expr(Expr, Safe), 32, op(Op), 32, Acc]
-       end, [], lists:reverse(Exprs)), $)];
+    Res = [[expr(Expr,Safe)] || Expr <- Exprs ],
+    [$(, string:join(Res,[$ ,op(Op),$ ]), $)];
 expr('?', _Safe) -> $?;
 expr(null, _Safe) -> <<"NULL">>;
 expr(Val, _Safe) when is_atom(Val) -> convert(Val);
