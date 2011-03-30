@@ -54,13 +54,17 @@ test() ->
 	 [{insert, project, [{foo, 5}, {baz, "bob"}]},
 	  "INSERT INTO project(foo, baz) VALUES (5, \'bob\')"],
 
-	 [{insert, project, [foo, bar, baz], [[a, b, c], [d, e, f]]},
+	 [{insert, project, {[foo, bar, baz], [[a, b, c], [d, e, f]]}},
 	  "INSERT INTO project(foo, bar, baz) VALUES "
 	  "('a', 'b', 'c'), ('d', 'e', 'f')"],
 
-	 [{insert, project, [foo, bar, baz], [{a, b, c}, {d, e, f}]},
+	 [{insert, project, {[foo, bar, baz], [{a, b, c}, {d, e, f}]}},
 	  "INSERT INTO project(foo, bar, baz) VALUES "
 	  "('a', 'b', 'c'), ('d', 'e', 'f')"],
+	 
+	 [{insert, 'Documents', [{projectid,42},{documentpath, "/"}],{returning,documentid}},
+	  "INSERT INTO Documents(projectid, documentpath) VALUES "
+	  "(42, '/') RETURNING documentid"],
 	 
 	 [{update, project, [{foo, 5}, {bar, 6}, {baz, "hello"}]},
 	  "UPDATE project SET foo = 5, bar = 6, baz = \'hello'"],

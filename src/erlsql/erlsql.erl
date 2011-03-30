@@ -219,8 +219,8 @@ sql2({Select1, union_all, Select2, {where, _} = Where, Extras}, Safe) ->
 
 sql2({insert, Table, Params}, _Safe) ->
     insert(Table, Params);
-sql2({insert, Table, Fields, Values}, _Safe) ->
-    insert(Table, Fields, Values);
+sql2({insert, Table, Params, Returning}, Safe) ->
+    insert(Table, Params, Returning, Safe);
 
 sql2({update, Table, Props}, Safe) ->
     update(Table, Props, Safe);
@@ -360,7 +360,7 @@ extra_clause2(Exprs, Safe) ->
     Res = [extra_clause(Expr,Safe) || Expr <- Exprs, Expr =/= undefined],
     [Res].
 
-insert(Table, Params) ->
+insert(Table, Params) when is_list(Params) ->
     Names = make_list(Params, fun({Name, _Value}) ->
                          convert(Name)
                      end),
@@ -370,9 +370,8 @@ insert(Table, Params) ->
                 encode(Value)
             end),
         $)],
-    make_insert_query(Table, Names, Values).
-
-insert(Table, Fields, Records) ->
+    make_insert_query(Table, Names, Values);
+insert(Table, {Fields, Records}) ->
     Names = make_list(Fields, fun convert/1),
     Values =
     make_list(
@@ -386,9 +385,16 @@ insert(Table, Fields, Records) ->
       end),
     make_insert_query(Table, Names, Values).
 
+insert(Table, Params, undefined, _Safe) ->
+    insert(Table, Params);
+insert(Table, Params, {returning, Ret}, Safe) ->
+    insert(Table, Params, Ret, Safe);
+insert(Table, Params, Returning, Safe) ->
+    [insert(Table, Params), <<" RETURNING ">>, expr(Returning, Safe)].
+
 make_insert_query(Table, Names, Values) ->
     [<<"INSERT INTO ">>, convert(Table),
-     $(, Names, <<") VALUES ">>, Values].
+     <<"(">>, Names, <<") VALUES ">>, Values].
 
 update(Table, Props, Safe) ->
     update(Table, Props, undefined, Safe).
@@ -429,8 +435,7 @@ delete(Table, Using, WhereExpr, Extras, Safe) ->
     end.
 
 convert(Val) when is_atom(Val)->
-    {_Stuff, Bin} = split_binary(term_to_binary(Val), 4),
-    Bin.
+    atom_to_binary(Val, latin1).
 
 make_list(Vals, ConvertFun) when is_list(Vals) ->
     string:join([[ConvertFun(Val)] || Val <- Vals],", ");
@@ -489,7 +494,7 @@ expr({list, Vals}, _Safe) when is_list(Vals) ->
     [$(, make_list(Vals, fun encode/1), $)];
 expr({Op, Exprs}, Safe) when is_list(Exprs) ->
     Res = [[expr(Expr,Safe)] || Expr <- Exprs ],
-    [$(, string:join(Res,[$ ,op(Op),$ ]), $)];
+    [$(, string:join(Res,[32, op(Op), 32]), $)];
 expr('?', _Safe) -> $?;
 expr(null, _Safe) -> <<"NULL">>;
 expr(Val, _Safe) when is_atom(Val) -> convert(Val);
